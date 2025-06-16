@@ -1,4 +1,5 @@
 import { useState } from "react"
+import { clsx } from 'clsx'
 import   languages   from "../languages.js"
 
 function App() {
@@ -9,12 +10,13 @@ function App() {
   const alphabets = "abcdefghijklmnopqrstuvwxyz"
 
   function getGuessedLetter(letter) {
-    setGuessedLetter(prevLetters => 
-      guessedLetter.includes(letter) ? [...prevLetters, letter] : prevLetters)
+    setGuessedLetter(prevLetters => {
+      return (
+        guessedLetter.includes(letter) ? prevLetters : [...prevLetters, letter]
+      )
+    })
   }
 
-  console.log(guessedLetter)
-  
   const languageElements = languages.map(lang =>{
     return (
       <span 
@@ -28,21 +30,41 @@ function App() {
 
     const letterElements = currentWord.split("").map((letter, index) => {
       return (
-        <span key={index}>{guessedLetter.includes(letter) ? letter.toUpperCase() : " "}</span>
+        <span 
+          key={index}
+        >
+          {guessedLetter.includes(letter) ? letter.toUpperCase() : " "}
+        </span>
       )
     })
 
     const keyboardElements = alphabets.split("").map(letter => {
+    const letterGuessed = guessedLetter.includes(letter)
+    const isGuessCorrect = letterGuessed &&  currentWord.includes(letter)
+    const isGuessWrong = letterGuessed && !currentWord.includes(letter)
+    const className = clsx({
+        correct: isGuessCorrect,
+        wrong: isGuessWrong
+      })
       return (
-        <button onClick={() => getGuessedLetter(letter)} key={letter}>{letter}</button>
+        <button
+          className={className}
+          onClick={() => getGuessedLetter(letter)} 
+          key={letter}
+        >
+          {letter.toUpperCase()}
+        </button>
       )
     })
+
 
   return (
     <main>
       <header>
         <h1>Assembly: Endgame</h1>
-        <p>Guess the word in under 8 attempts to keep the programming world safe from Assembly!</p>
+        <p>
+          Guess the word in under 8 attempts to keep the programming world safe from Assembly!
+        </p>
       </header>
       <section className="game-status">
         <h2>You win!</h2>
