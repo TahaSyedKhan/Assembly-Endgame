@@ -9,6 +9,13 @@ function App() {
 
   const alphabets = "abcdefghijklmnopqrstuvwxyz"
 
+  const guessesLeft = languages.length - 1
+  const wrongGuessCount = guessedLetter.filter(letter => !currentWord.includes(letter)).length
+  const isGameLost = wrongGuessCount >= guessesLeft
+  const isGameWon =
+        currentWord.split("").every(letter => guessedLetter.includes(letter)) 
+  const isGameOver = isGameWon || isGameLost
+
   function getGuessedLetter(letter) {
     setGuessedLetter(prevLetters => {
       return (
@@ -17,10 +24,12 @@ function App() {
     })
   }
 
-  const languageElements = languages.map(lang =>{
+  const languageElements = languages.map((lang, index) =>{
+    const isLanguageLost = index < wrongGuessCount
+    const className = clsx("chip",  {lost: isLanguageLost})
     return (
       <span 
-        className="chip"
+        className={className}
         style={{backgroundColor: lang.backgroundColor, color: lang.color}} 
         key={lang.name}
         >
@@ -48,6 +57,7 @@ function App() {
       })
       return (
         <button
+          disabled={isGameOver}
           className={className}
           onClick={() => getGuessedLetter(letter)} 
           key={letter}
@@ -57,7 +67,31 @@ function App() {
       )
     })
 
-
+    function gameStatus() {
+      if(!isGameOver) {
+        return null
+      }
+      if(isGameWon) {
+        return (
+        <>
+          <h2>You win!</h2>
+          <p>Well done! 🎉</p>
+        </>
+        )
+      }
+      if(isGameLost) {
+        return (
+        <>
+          <h2>Game over!</h2>
+          <p>You lose! Better start learning Assembly 😭</p>
+        </>
+        )
+      }
+    }
+    const gameStatusClass = clsx("game-status",{
+      won: isGameWon,
+      lost: isGameLost
+    })
   return (
     <main>
       <header>
@@ -66,9 +100,8 @@ function App() {
           Guess the word in under 8 attempts to keep the programming world safe from Assembly!
         </p>
       </header>
-      <section className="game-status">
-        <h2>You win!</h2>
-        <p>Well done! 🎉</p>
+      <section className={gameStatusClass}>
+        {gameStatus()}
       </section>
       <section className="language-chips">
         {languageElements}
@@ -79,6 +112,7 @@ function App() {
       <section className="keyboard">
         {keyboardElements}
       </section>
+      <button className="new-game">New Game</button>
     </main>
   )
 }
