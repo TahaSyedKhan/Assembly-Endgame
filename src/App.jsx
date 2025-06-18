@@ -1,16 +1,20 @@
 import { useState } from "react"
 import { clsx } from 'clsx'
+import Confetti from 'react-confetti'
 import   languages   from "../languages.js"
+import { getFarewellText, getRandomWord } from "../utils.js"
 
 function App() {
 
-  const [currentWord, setCurrentWord] = useState("react")
+  const [currentWord, setCurrentWord] = useState(() => getRandomWord())
   const [guessedLetter, setGuessedLetter] = useState([])
 
   const alphabets = "abcdefghijklmnopqrstuvwxyz"
 
   const guessesLeft = languages.length - 1
   const wrongGuessCount = guessedLetter.filter(letter => !currentWord.includes(letter)).length
+  const lastLetterGuessed = guessedLetter[guessedLetter.length - 1]
+  const isLastGuessIncorrect = lastLetterGuessed &&  !currentWord.includes(lastLetterGuessed)
   const isGameLost = wrongGuessCount >= guessesLeft
   const isGameWon =
         currentWord.split("").every(letter => guessedLetter.includes(letter)) 
@@ -38,11 +42,16 @@ function App() {
     )})
 
     const letterElements = currentWord.split("").map((letter, index) => {
+      const shouldRevealLetter = isGameLost || guessedLetter.includes(letter)
+        const letterClassName = clsx(
+            isGameLost && !guessedLetter.includes(letter) && "missed-letter"
+        )
       return (
         <span 
           key={index}
+          className={letterClassName}
         >
-          {guessedLetter.includes(letter) ? letter.toUpperCase() : " "}
+          {shouldRevealLetter ? letter.toUpperCase() : " "}
         </span>
       )
     })
@@ -59,6 +68,8 @@ function App() {
         <button
           disabled={isGameOver}
           className={className}
+          aria-disabled={guessedLetter.includes(letter)}
+          aria-label={`Letter ${letter}`}
           onClick={() => getGuessedLetter(letter)} 
           key={letter}
         >
@@ -68,8 +79,12 @@ function App() {
     })
 
     function gameStatus() {
-      if(!isGameOver) {
-        return null
+      if(!isGameOver && isLastGuessIncorrect) {
+        return (
+          <p className="farewell-message">
+            {getFarewellText(languages[wrongGuessCount - 1].name)}
+          </p>
+        )
       }
       if(isGameWon) {
         return (
@@ -87,13 +102,27 @@ function App() {
         </>
         )
       }
+      return null
     }
     const gameStatusClass = clsx("game-status",{
       won: isGameWon,
-      lost: isGameLost
+      lost: isGameLost,
+      farewell: !isGameOver && isLastGuessIncorrect
     })
+
+    function startNewGame() {
+      setCurrentWord(getRandomWord())
+      setGuessedLetter([])
+    }
   return (
     <main>
+          {
+                isGameWon && 
+                    <Confetti
+                        recycle={false}
+                        numberOfPieces={1000}
+                    />
+            }
       <header>
         <h1>Assembly: Endgame</h1>
         <p>
@@ -109,10 +138,27 @@ function App() {
       <section className="word">
         {letterElements}
       </section>
+      <section
+                className="sr-only"
+                aria-live="polite"
+                role="status"
+            >
+                <p>
+                    {currentWord.includes(lastLetterGuessed) ?
+                        `Correct! The letter ${lastLetterGuessed} is in the word.` :
+                        `Sorry, the letter ${lastLetterGuessed} is not in the word.`
+                    }
+                    You have {guessesLeft} attempts left.
+                </p>
+                <p>Current word: {currentWord.split("").map(letter =>
+                    guessedLetter.includes(letter) ? letter + "." : "blank.")
+                    .join(" ")}</p>
+
+            </section>
       <section className="keyboard">
         {keyboardElements}
       </section>
-      <button className="new-game">New Game</button>
+      <button onClick={startNewGame} className="new-game">New Game</button>
     </main>
   )
 }
